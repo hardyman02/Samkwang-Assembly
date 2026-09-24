@@ -1,0 +1,12 @@
+{
+  "name":"SAMKWANG ASSEMBLY",
+  "short_name":"SAMKWANG",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f2f5f9",
+  "theme_color":"#0d3469",
+  "icons":[
+    {"src":"assets/icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"assets/icon-512.png","sizes":"512x512","type":"image/png"}
+  ]
+}
