@@ -248,3 +248,75 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPro
 restore();
 </script>
 </body></html>
+// ==========================================
+// SAMKWANG ASSEMBLY - LF-001 ~ LF-006 기능 추가
+// ==========================================
+
+// LF-002: 전체 화면 언어 사전
+const I18N_DICTIONARY = {
+  ko: { plan_qty: "계획 수량", actual_qty: "실적 수량", progress_pct: "달성률 (%)", current_status: "현재 상태", running: "RUNNING", line_stop: "LINE STOP", resume: "Resume (재가동)" },
+  en: { plan_qty: "Plan Qty", actual_qty: "Actual Qty", progress_pct: "Progress (%)", current_status: "Current Status", running: "RUNNING", line_stop: "LINE STOP", resume: "Resume" },
+  es: { plan_qty: "Cant. Plan", actual_qty: "Cant. Real", progress_pct: "Progreso (%)", current_status: "Estado Actual", running: "EN EJECUCIÓN", line_stop: "LÍNEA DETENIDA", resume: "Reanudar" }
+};
+
+let currentLang = localStorage.getItem('samkwang_lang') || 'ko';
+
+// 언어 변경 함수
+function setSystemLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('samkwang_lang', lang);
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N_DICTIONARY[lang] && I18N_DICTIONARY[lang][key]) {
+      el.innerText = I18N_DICTIONARY[lang][key];
+    }
+  });
+}
+
+// LF-003: Resume (재가동) 버튼 동작
+function onResumeClick() {
+  const statusEl = document.getElementById('dashCurrentStatus');
+  if (statusEl) {
+    statusEl.innerText = I18N_DICTIONARY[currentLang].running;
+    statusEl.className = "status-badge running";
+  }
+  alert("라인이 RUNNING 상태로 전환되었습니다.");
+}
+
+// LF-005: 긴급 생산계획 추가 (Manager / Admin 전용)
+function addManualPlan(userRole, currentPlans, newPlan) {
+  if (!['Manager', 'Administrator'].includes(userRole)) {
+    alert("Manager 또는 Administrator 권한만 긴급 계획을 추가할 수 있습니다.");
+    return currentPlans;
+  }
+  const manualEntry = {
+    ...newPlan,
+    isManual: true,
+    badge: "🔥 Manual Plan",
+    status: "PLANNED",
+    createdAt: new Date().toISOString()
+  };
+  currentPlans.push(manualEntry);
+  return currentPlans;
+}
+
+// LF-006: 생산계획 동기화 (Synchronize)
+function synchronizePlans(existingPlans, newUploadedPlans) {
+  const syncList = [];
+  const existingMap = new Map(existingPlans.map(p => [p.partNumber, p]));
+
+  existingPlans.forEach(plan => {
+    if (['IN_PROGRESS', 'LINE_STOP', 'COMPLETED'].includes(plan.status)) {
+      syncList.push(plan); // 진행 중, 정지, 완료 항목 유지
+    }
+  });
+
+  newUploadedPlans.forEach(newPlan => {
+    const existing = existingMap.get(newPlan.partNumber);
+    if (!existing || !['IN_PROGRESS', 'LINE_STOP', 'COMPLETED'].includes(existing.status)) {
+      syncList.push({ ...newPlan, status: 'PLANNED' });
+    }
+  });
+
+  return syncList;
+}
